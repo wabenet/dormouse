@@ -1,3 +1,7 @@
+PLATFORMS=darwin linux
+ARCHITECTURES=386 amd64
+
+.PHONY: all
 all: clean test build
 
 .PHONY: clean
@@ -18,8 +22,10 @@ lint:
 
 .PHONY: test
 test:
-	go test -cover ./...
+	CGO_ENABLED=0 go test -cover ./...
 
 .PHONY: build
 build:
-	gox -arch="amd64" -os="darwin linux" ./...
+	$(foreach GOOS, $(PLATFORMS),\
+	$(foreach GOARCH, $(ARCHITECTURES), \
+	$(shell CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -v -o dormouse_$(GOOS)_$(GOARCH) ./cmd/dormouse)))
