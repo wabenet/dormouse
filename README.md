@@ -52,15 +52,18 @@ exec: ["echo", "Good {{ option `time` }}, {{ arg `firstname` }}!"]
 ```
 
 ```bash
-$ dormouse config.yaml Steve
+$ dormouse config.yaml -- Steve
 Good day, Steve!
 
-$ dormouse config.yaml Steve --time=morning
+$ dormouse config.yaml -- Steve --time=morning
 Good morning, Steve!
 
-$ dormouse config.yaml Steve -t eveninng
+$ dormouse config.yaml -- Steve -t eveninng
 Good evening, Steve!
 ```
+
+We use the `--` here to separate the options to dormouse directly from the flags
+for our custom command.
 
 You can create a whole command tree by adding subcommands. Each command config
 can have a `subcommands` field, which is a map from command names to a new
@@ -74,7 +77,7 @@ subcommands:
 ```
 
 ```bash
-$ dormouse config.yaml everyone
+$ dormouse config.yaml -- everyone
 Hello everyone!
 ```
 
@@ -82,7 +85,7 @@ To wrap things up, we now save our config somewhere useful and set up a shell
 alias for it, and suddenly we have our very own CLI, without a single line of code:
 
 ```bash
-$ alias greet="dormouse ~/.dormouse/greet.yaml"
+$ alias greet="dormouse ~/.dormouse/greet.yaml --"
 
 $ greet Steve
 Good day, Steve!

@@ -6,14 +6,18 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 
+	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
 )
 
 const (
-	ErrInvalidArgument Error = "invalid argument"
-	ErrInvalidConfig   Error = "invalid configuration"
+	Name        = "dormouse"
+	Description = `
+Dormouse is a stupidly simple tool, that builds and runs a simple CLI that wraps
+existing tools and scripts based on a YAML configuration file.`
+
+	ErrInvalidConfig Error = "invalid configuration"
 )
 
 type Error string
@@ -22,39 +26,71 @@ func (e Error) Error() string {
 	return string(e)
 }
 
-func Execute() int {
-	if err := Run(); err != nil {
-		var e *exec.ExitError
-		if errors.As(err, &e) {
-			return e.ExitCode()
-		}
-
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-
-		return 1
-	}
-
-	return 0
+type result struct {
+	ExitCode int
+	Message  string
 }
 
-func Run() error {
-	if len(os.Args) <= 1 {
-		return fmt.Errorf("%w: first argument must be path to config file", ErrInvalidArgument)
+func Execute(version string) int {
+	r := &result{}
+
+	rootCmd := &cobra.Command{
+		Use:     fmt.Sprintf("%s file [args...]", Name),
+		Short:   Description,
+		Long:    Description,
+		Version: version,
+		Args:    cobra.MinimumNArgs(1),
+		Run: func(_ *cobra.Command, args []string) {
+			if err := runRootCmd(r, args); err != nil {
+				r.handleError(err)
+			}
+		},
 	}
 
-	config, err := ReadConfigFromFile(os.Args[1])
+	if err := rootCmd.Execute(); err != nil {
+		r.handleError(err)
+	}
+
+	if r.ExitCode != 0 {
+		fmt.Fprintf(os.Stderr, "%s\n", r.Message)
+	}
+
+	return r.ExitCode
+}
+
+func runRootCmd(r *result, args []string) error {
+	config, err := ReadConfigFromFile(args[0])
 	if err != nil {
 		return err
 	}
 
-	cmd, err := config.ToCobraCommand(path.Base(os.Args[0]))
+	cmd, err := config.ToCobraCommand(fmt.Sprintf("%s %s", Name, args[0]), r)
 	if err != nil {
 		return err
 	}
 
-	cmd.SetArgs(os.Args[2:])
+	cmd.SetArgs(args[1:])
 
-	return cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		return fmt.Errorf("error executing command: %w", err)
+	}
+
+	return nil
+}
+
+func (r *result) handleError(err error) {
+	if err == nil {
+		return
+	}
+
+	var e *exec.ExitError
+	if errors.As(err, &e) {
+		r.ExitCode = e.ExitCode()
+	} else {
+		r.ExitCode = 1
+	}
+
+	r.Message = err.Error()
 }
 
 func ReadConfigFromFile(path string) (*Command, error) {

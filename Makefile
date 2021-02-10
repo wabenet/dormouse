@@ -1,6 +1,9 @@
 PLATFORMS=darwin linux
 ARCHITECTURES=386 amd64
 
+VERSION := $(shell git describe)
+LDFLAGS := "-X main.version=$(VERSION)"
+
 .PHONY: all
 all: clean test build
 
@@ -18,7 +21,7 @@ tidy:
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable-all -D exhaustivestruct
+	CGO_ENABLED=0 golangci-lint run --enable-all -D exhaustivestruct
 
 .PHONY: test
 test:
@@ -28,4 +31,4 @@ test:
 build:
 	$(foreach GOOS, $(PLATFORMS),\
 	$(foreach GOARCH, $(ARCHITECTURES), \
-	$(shell CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -v -o dormouse_$(GOOS)_$(GOARCH) ./cmd/dormouse)))
+	$(shell CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -v -ldflags $(LDFLAGS) -o dormouse_$(GOOS)_$(GOARCH) ./cmd/dormouse)))
