@@ -1,2 +1,2 @@
-.cache
-/dormouse_*
+/.cache/
+/dist/

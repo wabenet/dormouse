@@ -4,6 +4,7 @@ backdrops:
       steps: |
         FROM golang:1.15-alpine
         RUN apk add -U git bash curl tree make
+        RUN curl -sSfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
         RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.36.0
     volumes:
       - "{{ projectRoot }}:/build"

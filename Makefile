@@ -1,15 +1,9 @@
-PLATFORMS=darwin linux
-ARCHITECTURES=386 amd64
-
-VERSION := $(shell git describe)
-LDFLAGS := "-X main.version=$(VERSION)"
-
 .PHONY: all
 all: clean test build
 
 .PHONY: clean
 clean:
-	rm -f dormouse_*
+	rm -rf ./dist
 
 .PHONY: fmt
 fmt:
@@ -29,6 +23,4 @@ test:
 
 .PHONY: build
 build:
-	$(foreach GOOS, $(PLATFORMS),\
-	$(foreach GOARCH, $(ARCHITECTURES), \
-	$(shell CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -v -ldflags $(LDFLAGS) -o dormouse_$(GOOS)_$(GOARCH) ./cmd/dormouse)))
+	goreleaser build --snapshot --rm-dist
