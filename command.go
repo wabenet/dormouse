@@ -1,8 +1,6 @@
 package dormouse
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,14 +13,9 @@ type Command struct {
 	Subcommands map[string]*Command `yaml:"subcommands"`
 }
 
-func (c *Command) ToCobraCommand(path string, r *result) (*cobra.Command, error) {
-	useLine := path
-	if len(c.Arguments) > 0 {
-		useLine = fmt.Sprintf("%s [args...]", useLine)
-	}
-
+func (c *Command) ToCobraCommand(name string, r *result) (*cobra.Command, error) {
 	cmd := &cobra.Command{
-		Use:   useLine,
+		Use:   name,
 		Short: c.Description,
 		Long:  c.Description,
 		Args:  cobra.MinimumNArgs(len(c.Arguments)),
@@ -40,7 +33,7 @@ func (c *Command) ToCobraCommand(path string, r *result) (*cobra.Command, error)
 	}
 
 	for n, sub := range c.Subcommands {
-		subCmd, err := sub.ToCobraCommand(fmt.Sprintf("%s %s", path, n), r)
+		subCmd, err := sub.ToCobraCommand(n, r)
 		if err != nil {
 			return nil, err
 		}
