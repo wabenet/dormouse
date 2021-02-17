@@ -58,7 +58,7 @@ Good day, Steve!
 $ dormouse config.yaml -- Steve --time=morning
 Good morning, Steve!
 
-$ dormouse config.yaml -- Steve -t eveninng
+$ dormouse config.yaml -- Steve -t evening
 Good evening, Steve!
 ```
 

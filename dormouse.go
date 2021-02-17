@@ -3,6 +3,7 @@ package dormouse
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -12,7 +13,6 @@ import (
 )
 
 const (
-	Name        = "dormouse"
 	Description = `
 Dormouse is a stupidly simple tool, that builds and runs a simple CLI that wraps
 existing tools and scripts based on a YAML configuration file.`
@@ -26,71 +26,93 @@ func (e Error) Error() string {
 	return string(e)
 }
 
-type result struct {
-	ExitCode int
-	Message  string
+type Dormouse struct {
+	Version string
+	Args    []string
+
+	Stdin  io.Reader
+	Stdout io.Writer
+	Stderr io.Writer
+
+	exitCode int
+	errorMsg string
 }
 
-func Execute(version string) int {
-	r := &result{}
+func New(version string) *Dormouse {
+	return &Dormouse{
+		Version: version,
+		Args:    os.Args,
+		Stdin:   os.Stdin,
+		Stdout:  os.Stdout,
+		Stderr:  os.Stderr,
+	}
+}
 
+func (d *Dormouse) Execute() int {
 	rootCmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s file [args...]", Name),
+		Use:     fmt.Sprintf("%s file [args...]", d.Args[0]),
 		Short:   Description,
 		Long:    Description,
-		Version: version,
+		Version: d.Version,
 		Args:    cobra.MinimumNArgs(1),
-		Run: func(_ *cobra.Command, args []string) {
-			if err := runRootCmd(r, args); err != nil {
-				r.handleError(err)
+		RunE: func(_ *cobra.Command, args []string) error {
+			config, err := ReadConfigFromFile(args[0])
+			if err != nil {
+				return err
 			}
+
+			cmd, err := config.ToCobraCommand(d, fmt.Sprintf("%s %s", d.Args[0], args[0]))
+			if err != nil {
+				return err
+			}
+
+			cmd.SetArgs(args[1:])
+
+			if err := cmd.Execute(); err != nil {
+				return fmt.Errorf("error executing command: %w", err)
+			}
+
+			return nil
 		},
 	}
 
+	rootCmd.SetArgs(d.Args[1:])
+
 	if err := rootCmd.Execute(); err != nil {
-		r.handleError(err)
+		fmt.Fprintf(d.Stderr, "%s\n", d.errorMsg)
+
+		return 1
 	}
 
-	if r.ExitCode != 0 {
-		fmt.Fprintf(os.Stderr, "%s\n", r.Message)
+	if d.exitCode != 0 {
+		fmt.Fprintf(d.Stderr, "%s\n", d.errorMsg)
 	}
 
-	return r.ExitCode
+	return d.exitCode
 }
 
-func runRootCmd(r *result, args []string) error {
-	config, err := ReadConfigFromFile(args[0])
-	if err != nil {
-		return err
-	}
+func (d *Dormouse) Exec(path string, args ...string) error {
+	// #nosec G204 // Because that is the whole point if this tool
+	cmd := exec.Command(path, args...)
+	cmd.Stdin = d.Stdin
+	cmd.Stdout = d.Stdout
+	cmd.Stderr = d.Stderr
 
-	cmd, err := config.ToCobraCommand(fmt.Sprintf("%s %s", Name, args[0]), r)
-	if err != nil {
-		return err
-	}
+	err := cmd.Run()
 
-	cmd.SetArgs(args[1:])
-
-	if err := cmd.Execute(); err != nil {
-		return fmt.Errorf("error executing command: %w", err)
-	}
-
-	return nil
-}
-
-func (r *result) handleError(err error) {
 	if err == nil {
-		return
+		return nil
 	}
 
 	var e *exec.ExitError
 	if errors.As(err, &e) {
-		r.ExitCode = e.ExitCode()
-	} else {
-		r.ExitCode = 1
+		d.errorMsg = err.Error()
+		d.exitCode = e.ExitCode()
+
+		return nil
 	}
 
-	r.Message = err.Error()
+	return fmt.Errorf("could not execute: %w", err)
 }
 
 func ReadConfigFromFile(path string) (*Command, error) {

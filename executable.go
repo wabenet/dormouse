@@ -3,7 +3,6 @@ package dormouse
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 	"text/template"
 )
@@ -69,12 +68,6 @@ func runTemplate(text string, fs template.FuncMap) (string, error) {
 	return buffer.String(), nil
 }
 
-func (e *ExecutableCommand) Run(args []string) error {
-	// #nosec G204 // Because that is the whole point if this tool
-	cmd := exec.Command(e.Path, append(e.Args, args...)...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
+func (e *ExecutableCommand) Run(d *Dormouse, args []string) error {
+	return d.Exec(e.Path, append(e.Args, args...)...)
 }

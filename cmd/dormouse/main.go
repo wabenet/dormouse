@@ -9,5 +9,5 @@ import (
 var version = "latest"
 
 func main() {
-	os.Exit(dormouse.Execute(version))
+	os.Exit(dormouse.New(version).Execute())
 }

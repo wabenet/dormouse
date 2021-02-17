@@ -1,0 +1,15 @@
+---
+arguments:
+  - name: firstname
+
+options:
+  - name: time
+    short: t
+    default: day
+
+script: |
+  echo "Good {{ option `time` }}, {{ arg `firstname` }}!"
+
+subcommands:
+  everyone:
+    exec: ["echo", "Hello everyone!"]

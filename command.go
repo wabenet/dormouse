@@ -13,16 +13,33 @@ type Command struct {
 	Subcommands map[string]*Command `yaml:"subcommands"`
 }
 
-func (c *Command) ToCobraCommand(name string, r *result) (*cobra.Command, error) {
+func (c *Command) ToCobraCommand(d *Dormouse, name string) (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:   name,
 		Short: c.Description,
 		Long:  c.Description,
 		Args:  cobra.MinimumNArgs(len(c.Arguments)),
-		Run: func(_ *cobra.Command, args []string) {
-			if err := runCmd(c, args); err != nil {
-				r.handleError(err)
+		RunE: func(_ *cobra.Command, args []string) error {
+			templateArgs, remainder, err := c.Arguments.Parse(args)
+			if err != nil {
+				return err
 			}
+
+			templateOpts, err := c.Options.Parse()
+			if err != nil {
+				return err
+			}
+
+			cmd, err := c.Executable.Parse(templateOpts, templateArgs)
+			if err != nil {
+				return err
+			}
+
+			if err := cmd.Run(d, remainder); err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 
@@ -33,7 +50,7 @@ func (c *Command) ToCobraCommand(name string, r *result) (*cobra.Command, error)
 	}
 
 	for n, sub := range c.Subcommands {
-		subCmd, err := sub.ToCobraCommand(n, r)
+		subCmd, err := sub.ToCobraCommand(d, n)
 		if err != nil {
 			return nil, err
 		}
@@ -42,27 +59,4 @@ func (c *Command) ToCobraCommand(name string, r *result) (*cobra.Command, error)
 	}
 
 	return cmd, nil
-}
-
-func runCmd(c *Command, args []string) error {
-	templateArgs, remainder, err := c.Arguments.Parse(args)
-	if err != nil {
-		return err
-	}
-
-	templateOpts, err := c.Options.Parse()
-	if err != nil {
-		return err
-	}
-
-	cmd, err := c.Executable.Parse(templateOpts, templateArgs)
-	if err != nil {
-		return err
-	}
-
-	if err := cmd.Run(remainder); err != nil {
-		return err
-	}
-
-	return nil
 }
