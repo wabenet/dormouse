@@ -35,11 +35,7 @@ func (c *Command) ToCobraCommand(d *Dormouse, name string) (*cobra.Command, erro
 				return err
 			}
 
-			if err := cmd.Run(d, remainder); err != nil {
-				return err
-			}
-
-			return nil
+			return cmd.Run(d, remainder)
 		},
 	}
 

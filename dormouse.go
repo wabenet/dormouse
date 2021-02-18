@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 
@@ -116,7 +115,7 @@ func (d *Dormouse) Exec(path string, args ...string) error {
 }
 
 func ReadConfigFromFile(path string) (*Command, error) {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file '%s': %w", path, err)
 	}
