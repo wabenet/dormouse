@@ -14,11 +14,15 @@ type Command struct {
 }
 
 func (c *Command) ToCobraCommand(d *Dormouse, name string) (*cobra.Command, error) {
+	unknownFlags := []string{}
 	cmd := &cobra.Command{
 		Use:   name,
 		Short: c.Description,
 		Long:  c.Description,
 		Args:  cobra.MinimumNArgs(len(c.Arguments)),
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: true,
+		},
 		RunE: func(_ *cobra.Command, args []string) error {
 			templateArgs, remainder, err := c.Arguments.Parse(args)
 			if err != nil {
@@ -35,9 +39,11 @@ func (c *Command) ToCobraCommand(d *Dormouse, name string) (*cobra.Command, erro
 				return err
 			}
 
-			return cmd.Run(d, remainder)
+			return cmd.Run(d, append(unknownFlags, remainder...))
 		},
 	}
+
+	cmd.Flags().SetUnknownFlagsSlice(&unknownFlags)
 
 	for _, opt := range c.Options {
 		if err := opt.Register(cmd); err != nil {
