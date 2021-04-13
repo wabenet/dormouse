@@ -17,14 +17,26 @@ type ExecutableCommand struct {
 	Args []string
 }
 
-func (e *Executable) Parse(opts OptionValues, args ArgumentValues) (*ExecutableCommand, error) {
+func (e *Executable) Validate() error {
 	if len(e.Exec) > 0 && len(e.Script) > 0 {
-		return nil, fmt.Errorf("%w: only one of 'exec' and 'script' is allowed", ErrInvalidConfig)
+		return fmt.Errorf("%w: only one of 'exec' and 'script' is allowed", ErrInvalidConfig)
+	}
+
+	if len(e.Exec) == 0 && len(e.Script) == 0 {
+		return fmt.Errorf("%w: either one of 'exec' or 'script' is required", ErrInvalidConfig)
+	}
+
+	return nil
+}
+
+func (e *Executable) Parse(values *Values) (*ExecutableCommand, error) {
+	if err := e.Validate(); err != nil {
+		return nil, err
 	}
 
 	fs := template.FuncMap{
-		"option": opts.Get,
-		"arg":    args.Get,
+		"option": values.Option,
+		"arg":    values.Positional,
 		"which":  exec.LookPath,
 	}
 

@@ -1,64 +1,36 @@
 package dormouse
 
-import (
-	"github.com/spf13/cobra"
-)
+type Commands map[string]*Command
 
 type Command struct {
-	Executable `yaml:",inline"`
+	Subcommands Commands `yaml:"subcommands"`
 
-	Description string              `yaml:"description"`
-	Options     Options             `yaml:"options"`
-	Arguments   Arguments           `yaml:"arguments"`
-	Subcommands map[string]*Command `yaml:"subcommands"`
+	Executable `yaml:",inline"`
+	Arguments  `yaml:",inline"`
 }
 
-func (c *Command) ToCobraCommand(d *Dormouse, name string) (*cobra.Command, error) {
-	unknownFlags := []string{}
-	cmd := &cobra.Command{
-		Use:   name,
-		Short: c.Description,
-		Long:  c.Description,
-		Args:  cobra.MinimumNArgs(len(c.Arguments)),
-		FParseErrWhitelist: cobra.FParseErrWhitelist{
-			UnknownFlags: true,
-		},
-		RunE: func(_ *cobra.Command, args []string) error {
-			templateArgs, remainder, err := c.Arguments.Parse(args)
-			if err != nil {
-				return err
-			}
-
-			templateOpts, err := c.Options.Parse()
-			if err != nil {
-				return err
-			}
-
-			cmd, err := c.Executable.Parse(templateOpts, templateArgs)
-			if err != nil {
-				return err
-			}
-
-			return cmd.Run(d, append(unknownFlags, remainder...))
-		},
+func (c *Command) Execute(d *Dormouse, args []string) error {
+	if len(args) == 0 {
+		return c.run(d, args)
 	}
 
-	cmd.Flags().SetUnknownFlagsSlice(&unknownFlags)
-
-	for _, opt := range c.Options {
-		if err := opt.Register(cmd); err != nil {
-			return nil, err
-		}
+	if sub, ok := c.Subcommands[args[0]]; ok {
+		return sub.Execute(d, args[1:])
 	}
 
-	for n, sub := range c.Subcommands {
-		subCmd, err := sub.ToCobraCommand(d, n)
-		if err != nil {
-			return nil, err
-		}
+	return c.run(d, args)
+}
 
-		cmd.AddCommand(subCmd)
+func (c *Command) run(d *Dormouse, args []string) error {
+	values, err := c.Arguments.Parse(args)
+	if err != nil {
+		return err
 	}
 
-	return cmd, nil
+	ex, err := c.Executable.Parse(values)
+	if err != nil {
+		return err
+	}
+
+	return ex.Run(d, values.args)
 }

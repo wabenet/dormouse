@@ -2,7 +2,6 @@ package dormouse_test
 
 import (
 	"bytes"
-	"os"
 	"strings"
 	"testing"
 
@@ -10,34 +9,64 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func FakeContext(args ...string) (*dormouse.Dormouse, *strings.Builder) {
-	var stdout strings.Builder
-
-	return &dormouse.Dormouse{
-		Version: "test",
-		Args:    args,
-		Stdin:   bytes.NewReader(nil),
-		Stdout:  &stdout,
-		Stderr:  os.Stderr,
-	}, &stdout
+var Tests = []struct {
+	Name   string
+	Args   []string
+	Stdout string
+	Stderr string
+	Exit   int
+}{
+	{
+		Name:   "greet steve",
+		Args:   []string{"dormouse", "test/greet.yaml", "Steve", "--time", "morning"},
+		Stdout: "Good morning, Steve!\n",
+	},
+	{
+		Name:   "greet steve alt",
+		Args:   []string{"dormouse", "test/greet.yaml", "Steve", "--time=morning"},
+		Stdout: "Good morning, Steve!\n",
+	},
+	{
+		Name:   "greet steve shorthand",
+		Args:   []string{"dormouse", "test/greet.yaml", "Steve", "-t", "morning"},
+		Stdout: "Good morning, Steve!\n",
+	},
+	{
+		Name:   "greet everyone",
+		Args:   []string{"dormouse", "test/greet.yaml", "everyone"},
+		Stdout: "Hello everyone!\n",
+	},
+	{
+		Name:   "exit code",
+		Args:   []string{"dormouse", "test/error.yaml"},
+		Stdout: "This is an error\n",
+		Exit:   127,
+	},
 }
 
-func TestGreetSteve(t *testing.T) {
+func TestAll(t *testing.T) {
 	t.Parallel()
 
-	d, stdout := FakeContext("dormouse", "test/greet.yaml", "--", "Steve", "--time", "morning")
-	result := d.Execute()
+	for _, tt := range Tests {
+		tt := tt
+		t.Run(tt.Name, func(t *testing.T) {
+			t.Parallel()
 
-	assert.Equal(t, 0, result)
-	assert.Equal(t, "Good morning, Steve!\n", stdout.String())
-}
+			var stdout strings.Builder
+			var stderr strings.Builder
 
-func TestGreetEveryone(t *testing.T) {
-	t.Parallel()
+			d := &dormouse.Dormouse{
+				Args:   tt.Args,
+				Stdin:  bytes.NewReader(nil),
+				Stdout: &stdout,
+				Stderr: &stderr,
+			}
 
-	d, stdout := FakeContext("dormouse", "test/greet.yaml", "--", "everyone")
-	result := d.Execute()
+			result := d.Execute()
 
-	assert.Equal(t, 0, result)
-	assert.Equal(t, "Hello everyone!\n", stdout.String())
+			assert.Equal(t, tt.Exit, result)
+			assert.Equal(t, tt.Stdout, stdout.String())
+			assert.Equal(t, tt.Stderr, stderr.String())
+		})
+	}
 }

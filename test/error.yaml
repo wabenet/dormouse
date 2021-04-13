@@ -1,0 +1,4 @@
+---
+script: |
+  echo "This is an error"
+  exit 127

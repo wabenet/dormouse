@@ -7,16 +7,12 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
 )
 
 const (
-	Description = `
-Dormouse is a stupidly simple tool, that builds and runs a simple CLI that wraps
-existing tools and scripts based on a YAML configuration file.`
-
-	ErrInvalidConfig Error = "invalid configuration"
+	ErrInvalidConfig    Error = "invalid configuration"
+	ErrInvalidArguments Error = "invalid arguments"
 )
 
 type Error string
@@ -26,68 +22,46 @@ func (e Error) Error() string {
 }
 
 type Dormouse struct {
-	Version string
-	Args    []string
+	Args []string
 
 	Stdin  io.Reader
 	Stdout io.Writer
 	Stderr io.Writer
 
 	exitCode int
-	errorMsg string
 }
 
 func New(version string) *Dormouse {
 	return &Dormouse{
-		Version: version,
-		Args:    os.Args,
-		Stdin:   os.Stdin,
-		Stdout:  os.Stdout,
-		Stderr:  os.Stderr,
+		Args:     os.Args,
+		Stdin:    os.Stdin,
+		Stdout:   os.Stdout,
+		Stderr:   os.Stderr,
+		exitCode: 0,
 	}
 }
 
 func (d *Dormouse) Execute() int {
-	rootCmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s file [args...]", d.Args[0]),
-		Short:   Description,
-		Long:    Description,
-		Version: d.Version,
-		Args:    cobra.MinimumNArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			config, err := ReadConfigFromFile(args[0])
-			if err != nil {
-				return err
-			}
-
-			cmd, err := config.ToCobraCommand(d, fmt.Sprintf("%s %s", d.Args[0], args[0]))
-			if err != nil {
-				return err
-			}
-
-			cmd.SetArgs(args[1:])
-
-			if err := cmd.Execute(); err != nil {
-				return fmt.Errorf("error executing command: %w", err)
-			}
-
-			return nil
-		},
+	if len(d.Args) < 2 {
+		return d.fail(fmt.Errorf("%w: first argument must be path to config file", ErrInvalidArguments))
 	}
 
-	rootCmd.SetArgs(d.Args[1:])
-
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(d.Stderr, "%s\n", d.errorMsg)
-
-		return 1
+	cmd, err := ReadConfigFromFile(d.Args[1])
+	if err != nil {
+		return d.fail(err)
 	}
 
-	if d.exitCode != 0 {
-		fmt.Fprintf(d.Stderr, "%s\n", d.errorMsg)
+	if err := cmd.Execute(d, d.Args[2:]); err != nil {
+		return d.fail(err)
 	}
 
 	return d.exitCode
+}
+
+func (d *Dormouse) fail(err error) int {
+	fmt.Fprintf(d.Stderr, "%s\n", err.Error())
+
+	return 1
 }
 
 func (d *Dormouse) Exec(path string, args ...string) error {
@@ -105,7 +79,6 @@ func (d *Dormouse) Exec(path string, args ...string) error {
 
 	var e *exec.ExitError
 	if errors.As(err, &e) {
-		d.errorMsg = err.Error()
 		d.exitCode = e.ExitCode()
 
 		return nil
