@@ -28,4 +28,3 @@ jobs:
         with:
           version: v1.37
           skip-go-installation: true
-          args: --enable-all -D exhaustivestruct

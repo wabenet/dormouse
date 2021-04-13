@@ -1,0 +1,16 @@
+---
+linters:
+  enable-all: true
+
+linters-settings:
+  gofumpt:
+    extra-rules: true
+  unused:
+    check-exported: true
+
+issues:
+  exclude-rules:
+    - path: _test.go
+      linters:
+        - gochecknoglobals
+        - unused
