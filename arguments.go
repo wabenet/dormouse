@@ -3,6 +3,7 @@ package dormouse
 import (
 	"fmt"
 	"strings"
+	"text/template"
 )
 
 const endOfOptions = "--"
@@ -61,6 +62,20 @@ func (vs *Values) Option(name string) (string, error) {
 	}
 
 	return "", fmt.Errorf("%w: undefined option name: %s", ErrInvalidConfig, name)
+}
+
+func (vs *Values) GetFuncMap() template.FuncMap {
+	funcMap := template.FuncMap{}
+
+	for name, opt := range vs.optionByName {
+		funcMap[name] = func() string { return opt.value }
+	}
+
+	for name, arg := range vs.positionalByName {
+		funcMap[name] = func() string { return arg.value }
+	}
+
+	return funcMap
 }
 
 func (vs *Values) addOption(opt *Option) error {

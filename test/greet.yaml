@@ -8,7 +8,7 @@ options:
     default: day
 
 script: |
-  echo "Good {{ option `time` }}, {{ arg `firstname` }}!"
+  echo "Good {{ time }}, {{ firstname }}!"
 
 subcommands:
   everyone:

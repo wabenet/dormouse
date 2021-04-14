@@ -48,7 +48,7 @@ options:
     short: t
     default: day
 
-exec: ["echo", "Good {{ option `time` }}, {{ arg `firstname` }}!"]
+exec: ["echo", "Good {{ time }}, {{ firstname }}!"]
 ```
 
 ```bash

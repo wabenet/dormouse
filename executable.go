@@ -44,7 +44,7 @@ func (e *Executable) Parse(values *Values) (*ExecutableCommand, error) {
 
 	if len(e.Exec) > 0 {
 		for _, arg := range e.Exec {
-			value, err := runTemplate(arg, fs)
+			value, err := runTemplate(arg, fs, values.GetFuncMap())
 			if err != nil {
 				return nil, err
 			}
@@ -54,7 +54,7 @@ func (e *Executable) Parse(values *Values) (*ExecutableCommand, error) {
 	}
 
 	if len(e.Script) > 0 {
-		value, err := runTemplate(e.Script, fs)
+		value, err := runTemplate(e.Script, fs, values.GetFuncMap())
 		if err != nil {
 			return nil, err
 		}
@@ -65,8 +65,13 @@ func (e *Executable) Parse(values *Values) (*ExecutableCommand, error) {
 	return &ExecutableCommand{Path: execArgs[0], Args: execArgs[1:]}, nil
 }
 
-func runTemplate(text string, fs template.FuncMap) (string, error) {
-	templ, err := template.New("script").Funcs(fs).Parse(text)
+func runTemplate(text string, fs ...template.FuncMap) (string, error) {
+	templ := template.New("script")
+	for _, f := range fs {
+		templ = templ.Funcs(f)
+	}
+
+	templ, err := templ.Parse(text)
 	if err != nil {
 		return "", fmt.Errorf("could not parse template string: %w", err)
 	}
