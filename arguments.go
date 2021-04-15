@@ -6,7 +6,10 @@ import (
 	"text/template"
 )
 
-const endOfOptions = "--"
+const (
+	endOfOptions = "--"
+	switchValue  = "yes"
+)
 
 type Arguments struct {
 	Positionals Positionals `yaml:"arguments"`
@@ -28,6 +31,7 @@ type Option struct {
 	Short    string `yaml:"short"`
 	Default  string `yaml:"default"`
 	Required bool   `yaml:"required"`
+	Switch   bool   `yaml:"switch"`
 
 	value string `yaml:"-"`
 }
@@ -67,8 +71,14 @@ func (vs *Values) Option(name string) (string, error) {
 func (vs *Values) GetFuncMap() template.FuncMap {
 	funcMap := template.FuncMap{}
 
-	for name, opt := range vs.optionByName {
-		funcMap[name] = func() string { return opt.value }
+	for name := range vs.optionByName {
+		opt := vs.optionByName[name]
+
+		if opt.Switch {
+			funcMap[opt.Name] = func() bool { return len(opt.value) > 0 }
+		} else {
+			funcMap[opt.Name] = func() string { return opt.value }
+		}
 	}
 
 	for name, arg := range vs.positionalByName {
@@ -168,6 +178,8 @@ func (vs *Values) parseArgs(args []string) error {
 
 		if len(split) == 2 { // --name=value
 			opt.value = split[1]
+		} else if opt.Switch { // --name
+			opt.value = switchValue
 		} else if len(remainder) > 0 { // --name value
 			opt.value, remainder = remainder[0], remainder[1:]
 		} else { // --name
@@ -193,6 +205,8 @@ func (vs *Values) parseArgs(args []string) error {
 			opt.value = current[3:]
 		} else if len(current) > 2 { // -svalue
 			opt.value = current[2:]
+		} else if opt.Switch { // -s
+			opt.value = switchValue
 		} else if len(remainder) > 0 { // -s value
 			opt.value, remainder = remainder[0], remainder[1:]
 		} else { // -s

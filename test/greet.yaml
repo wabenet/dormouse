@@ -6,9 +6,16 @@ options:
   - name: time
     short: t
     default: day
+  - name: informal
+    short: i
+    switch: true
 
 script: |
-  echo "Good {{ time }}, {{ firstname }}!"
+  {{ if informal }}
+    echo "Hi {{ firstname }}!"
+  {{ else }}
+    echo "Good {{ time }}, {{ firstname }}!"
+  {{ end }}
 
 subcommands:
   everyone:

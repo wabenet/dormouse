@@ -32,6 +32,16 @@ var Tests = []struct {
 		Stdout: "Good morning, Steve!\n",
 	},
 	{
+		Name:   "greet steve informal",
+		Args:   []string{"dormouse", "test/greet.yaml", "Steve", "--informal"},
+		Stdout: "Hi Steve!\n",
+	},
+	{
+		Name:   "greet steve informal shorthand",
+		Args:   []string{"dormouse", "test/greet.yaml", "Steve", "-i"},
+		Stdout: "Hi Steve!\n",
+	},
+	{
 		Name:   "greet everyone",
 		Args:   []string{"dormouse", "test/greet.yaml", "everyone"},
 		Stdout: "Hello everyone!\n",
