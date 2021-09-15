@@ -59,4 +59,4 @@ jobs:
       - name: Upload to codeclimate
         run: |
           go test -race -coverprofile=coverage.txt -covermode=atomic
-          ./cc-test-reporter after-build
+          ./cc-test-reporter after-build --coverage-input-type=gocov
