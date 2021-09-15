@@ -53,5 +53,4 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         with:
-          coverageCommand: go test -race -coverprofile=coverage.txt -covermode=atomic
-          coverageLocations: ${{ github.workspace }}/coverage.txt
+          coverageCommand: go test -coverprofile c.out ./...
