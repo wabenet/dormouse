@@ -38,6 +38,8 @@ jobs:
 
   codeclimate:
     runs-on: ubuntu-latest
+    env:
+      CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
 
     steps:
       - uses: actions/checkout@v2
@@ -48,9 +50,13 @@ jobs:
         with:
           go-version: 1.16
 
+      - name: Set up test reporter
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter before-build
+
       - name: Upload to codeclimate
-        uses: paambaati/codeclimate-action@v2.7.5
-        env:
-          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-        with:
-          coverageCommand: go test -coverprofile c.out ./...
+        run: |
+          go test -race -coverprofile=coverage.txt -covermode=atomic
+          ./cc-test-reporter after-build
