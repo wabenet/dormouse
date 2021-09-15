@@ -9,30 +9,49 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
+
       - uses: goreleaser/goreleaser-action@v2
         with:
           args: build --snapshot --rm-dist
 
-  test:
+  codecov:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
+
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
+
       - name: Test and coverage
         run: go test -race -coverprofile=coverage.txt -covermode=atomic
+
       - name: Upload to codecov
         run: bash <(curl -s https://codecov.io/bash)
+
+  codeclimate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
       - name: Upload to codeclimate
         uses: paambaati/codeclimate-action@v2.7.5
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         with:
+          coverageCommand: go test -race -coverprofile=coverage.txt -covermode=atomic
           coverageLocations: ${{ github.workspace }}/coverage.txt
