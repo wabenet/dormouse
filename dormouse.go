@@ -28,6 +28,8 @@ type Dormouse struct {
 	Stdout io.Writer
 	Stderr io.Writer
 
+	Environ []string
+
 	exitCode int
 }
 
@@ -37,6 +39,7 @@ func New(version string) *Dormouse {
 		Stdin:    os.Stdin,
 		Stdout:   os.Stdout,
 		Stderr:   os.Stderr,
+		Environ:  os.Environ(),
 		exitCode: 0,
 	}
 }
@@ -64,9 +67,17 @@ func (d *Dormouse) fail(err error) int {
 	return 1
 }
 
-func (d *Dormouse) Exec(path string, args ...string) error {
+func (d *Dormouse) Exec(e *ExecutableCommand, args []string) error {
 	// #nosec G204 // Because that is the whole point if this tool
-	cmd := exec.Command(path, args...)
+	cmd := exec.Command(e.Path, append(e.Args, args...)...)
+
+	cmd.Dir = e.Dir
+
+	cmd.Env = d.Environ
+	for _, env := range e.Env {
+		cmd.Env = append(cmd.Env, env)
+	}
+
 	cmd.Stdin = d.Stdin
 	cmd.Stdout = d.Stdout
 	cmd.Stderr = d.Stderr
@@ -77,9 +88,9 @@ func (d *Dormouse) Exec(path string, args ...string) error {
 		return nil
 	}
 
-	var e *exec.ExitError
-	if errors.As(err, &e) {
-		d.exitCode = e.ExitCode()
+	var ee *exec.ExitError
+	if errors.As(err, &ee) {
+		d.exitCode = ee.ExitCode()
 
 		return nil
 	}

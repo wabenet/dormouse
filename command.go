@@ -32,5 +32,5 @@ func (c *Command) run(d *Dormouse, args []string) error {
 		return err
 	}
 
-	return ex.Run(d, values.args)
+	return d.Exec(ex, values.args)
 }
