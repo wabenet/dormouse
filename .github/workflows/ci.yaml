@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.19
 
       - name: Test and coverage
         run: go test -race -coverprofile=coverage.txt -covermode=atomic
@@ -48,7 +48,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.19
 
       - name: Set up test reporter
         run: |
