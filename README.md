@@ -1,3 +1,9 @@
+![release](https://img.shields.io/github/v/release/wabenet/dormouse?sort=semver)
+![build](https://img.shields.io/github/workflow/status/wabenet/dormouse/CI?logo=github)
+![codecov](https://img.shields.io/codecov/c/github/wabenet/dormouse?logo=codecov)
+![codeclimate](https://img.shields.io/codeclimate/maintainability/wabenet/dormouse?logo=codeclimate)
+![license](https://img.shields.io/github/license/wabenet/dormouse)
+
 # Dormouse
 
 Dormouse is a stupidly simple tool, that builds and runs a simple CLI that wraps
@@ -52,18 +58,15 @@ exec: ["echo", "Good {{ time }}, {{ firstname }}!"]
 ```
 
 ```bash
-$ dormouse config.yaml -- Steve
+$ dormouse config.yaml Steve
 Good day, Steve!
 
-$ dormouse config.yaml -- Steve --time=morning
+$ dormouse config.yaml Steve --time=morning
 Good morning, Steve!
 
-$ dormouse config.yaml -- Steve -t evening
+$ dormouse config.yaml Steve -t evening
 Good evening, Steve!
 ```
-
-We use the `--` here to separate the options to dormouse directly from the flags
-for our custom command.
 
 You can create a whole command tree by adding subcommands. Each command config
 can have a `subcommands` field, which is a map from command names to a new
@@ -77,7 +80,7 @@ subcommands:
 ```
 
 ```bash
-$ dormouse config.yaml -- everyone
+$ dormouse config.yaml everyone
 Hello everyone!
 ```
 
@@ -85,7 +88,7 @@ To wrap things up, we now save our config somewhere useful and set up a shell
 alias for it, and suddenly we have our very own CLI, without a single line of code:
 
 ```bash
-$ alias greet="dormouse ~/.dormouse/greet.yaml --"
+$ alias greet="dormouse ~/.dormouse/greet.yaml"
 
 $ greet Steve
 Good day, Steve!
@@ -97,7 +100,7 @@ Hello everyone!
 ## License & Authors
 
 ```text
-Copyright 2021 Ole Claussen
+Copyright 2022 Ole Claussen
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

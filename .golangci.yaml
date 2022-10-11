@@ -7,6 +7,8 @@ linters-settings:
     extra-rules: true
   unused:
     check-exported: true
+  gomnd:
+    ignored-numbers: [1,2,3]
 
 issues:
   exclude-rules:

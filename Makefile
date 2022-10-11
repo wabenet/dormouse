@@ -1,5 +1,5 @@
 .PHONY: all
-all: clean test build
+all: clean test build lint
 
 .PHONY: clean
 clean:
@@ -9,18 +9,18 @@ clean:
 fmt:
 	go fmt ./...
 
-.PHONY: tidy
-tidy:
+.PHONY: update
+update:
+	go list -f '{{if not (or .Main .Indirect)}}{{.Path}}{{end}}' -m all | xargs --no-run-if-empty go get
 	go mod tidy
 
 .PHONY: lint
 lint:
-	CGO_ENABLED=0 golangci-lint run
+	golangci-lint run
 
 .PHONY: test
 test:
-	CGO_ENABLED=0 go test -coverprofile cover.out ./...
-	go tool cover -html cover.out -o cover.html
+	go test -cover -race ./...
 
 .PHONY: build
 build:
