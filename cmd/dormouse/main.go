@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/oclaussen/dormouse"
+	"github.com/wabenet/dormouse"
 )
 
 var version = "latest"

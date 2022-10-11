@@ -1,4 +1,4 @@
-module github.com/oclaussen/dormouse
+module github.com/wabenet/dormouse
 
 go 1.16
 

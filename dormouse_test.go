@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/oclaussen/dormouse"
 	"github.com/stretchr/testify/assert"
+	"github.com/wabenet/dormouse"
 )
 
 var Tests = []struct {
